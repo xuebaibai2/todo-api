@@ -51,6 +51,19 @@ app.post('/todos',function (req, res) {
     res.json(todos);
 });
 
+//DELETE /todos/:id
+app.delete('/todos/:id', function (req, res) {
+    var todoID = parseInt(req.params.id);
+    var matchedTodo = _.findWhere(todos, {id: todoID});
+
+    if (!matchedTodo){
+        res.status(404).send("No Item to delete");
+    }else{
+        todos = _.without(todos, matchedTodo);
+        res.send("Item is deleted!");
+    }
+})
+
 app.listen(PORT, function () {
     console.log("Express listing on port: " + PORT) + "!";
 });
