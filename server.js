@@ -10,5 +10,5 @@ app.get('/', function (req, res) {
 });
 
 app.listen(PORT, function () {
-    console.log("Express listing on port: "+PORT)+"!";
+    console.log("Express listing on port: " + PORT) + "!";
 });
