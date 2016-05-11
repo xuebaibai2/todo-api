@@ -5,7 +5,7 @@ var bcrypt = require('bcrypt');
 var _ = require('underscore');
 
 module.exports = function (sequelize, DataTypes) {
-    return sequelize.define('uesr', {
+    var user = sequelize.define('uesr', {
             email: {
                 type: DataTypes.STRING,
                 allowNull: false,
@@ -50,7 +50,39 @@ module.exports = function (sequelize, DataTypes) {
                     var json = this.toJSON();
                     return _.pick(json, 'id', 'email', 'createdAt', 'updatedAt');
                 }
+            },
+            classMethods: {
+                authenticate: function (body) {
+                    return new Promise(function (resolve, reject) {
+                        if (!_.isString(body.email) || body.email.trim().length === 0) {
+                            return reject({
+                                "error": "Email cannot be empty!"
+                            });
+                        }
+                        if (!_.isString(body.password) || body.password.trim().length === 0) {
+                            return reject({
+                                "error": "Password cannot be empty!"
+                            });
+                        }
+                        user.findOne({
+                            where: {
+                                email: body.email
+                            }
+                        }).then(function (user) {
+                            if (!user || !bcrypt.compareSync(body.password, user.get('password_hash'))) {
+                                return reject({
+                                    "error": "Email or password is incorrect!"
+                                });
+                            }
+                            resolve(user);
+
+                        }, function (e) {
+                            reject(e);
+                        });
+                    });
+                }
             }
         }
     );
+    return user;
 };
