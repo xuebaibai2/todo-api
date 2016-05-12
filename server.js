@@ -21,7 +21,9 @@ app.get('/', function (req, res) {
 //GET /todos
 app.get('/todos', middleware.requireAuthentication, function (req, res) {
     var queryParams = req.query;
-    var where = {};
+    var where = {
+        uesrId: req.user.id
+    };
 
     if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'true') {
         where.completed = true;
@@ -46,7 +48,8 @@ app.get('/todos/:id', middleware.requireAuthentication, function (req, res) {
     var todoID = parseInt(req.params.id);
     db.todo.findOne({
         where: {
-            id: todoID
+            id: todoId,
+            uesrId: req.user.id
         }
     }).then(function (todo) {
         if (!todo) {
@@ -89,7 +92,8 @@ app.delete('/todos/:id', middleware.requireAuthentication, function (req, res) {
     var todoID = parseInt(req.params.id);
     db.todo.destroy({
         where: {
-            id: todoID
+            id: todoID,
+            uesrId: req.user.id
         }
     }).then(function (rows) {
         if (rows == 0) {
@@ -97,7 +101,7 @@ app.delete('/todos/:id', middleware.requireAuthentication, function (req, res) {
                 error: "No todo with current id"
             });
         } else {
-            res.status(204).send();
+            res.status(204).send("Successfully deleted!!");
         }
     }, function (e) {
         return res.status(500).send(e);
@@ -122,12 +126,16 @@ app.put('/todos/:id', middleware.requireAuthentication, function (req, res) {
         if (!todo) {
             res.status(404).send();
         } else {
-            todo.update(attributes)
-                .then(function (todo) {
-                    res.json(todo.toJSON());
-                }, function (e) {
-                    res.status(400).json(e);
-                })
+            if (todo.uesrId === req.user.id) {
+                todo.update(attributes)
+                    .then(function (todo) {
+                        res.json(todo.toJSON());
+                    }, function (e) {
+                        res.status(400).json(e);
+                    });
+            }else{
+                res.status(404).send();
+            }
         }
     }, function () {
         res.status(500).send();
