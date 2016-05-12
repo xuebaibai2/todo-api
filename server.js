@@ -6,6 +6,7 @@ var bodyParser = require('body-parser');
 var _ = require('underscore');
 var db = require('./db.js');
 var bcrypt = require('bcrypt');
+var middleware = require('./middleware.js')(db);
 
 var app = express();
 var PORT = process.env.PORT || 3000;
@@ -18,9 +19,10 @@ app.get('/', function (req, res) {
 });
 
 //GET /todos
-app.get('/todos', function (req, res) {
+app.get('/todos', middleware.requireAuthentication, function (req, res) {
     var queryParams = req.query;
     var where = {};
+
     if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'true') {
         where.completed = true;
     } else if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'false') {
@@ -40,7 +42,7 @@ app.get('/todos', function (req, res) {
     });
 });
 //GET /todos/:id
-app.get('/todos/:id', function (req, res) {
+app.get('/todos/:id', middleware.requireAuthentication, function (req, res) {
     var todoID = parseInt(req.params.id);
     db.todo.findOne({
         where: {
@@ -55,7 +57,7 @@ app.get('/todos/:id', function (req, res) {
 });
 
 //POST /todos
-app.post('/todos', function (req, res) {
+app.post('/todos', middleware.requireAuthentication, function (req, res) {
     var body = _.pick(req.body, 'description', 'completed');
 
     if (!_.isString(body.description) || body.description.trim().length === 0) {
@@ -79,7 +81,7 @@ app.post('/todos', function (req, res) {
 });
 
 //DELETE /todos/:id
-app.delete('/todos/:id', function (req, res) {
+app.delete('/todos/:id', middleware.requireAuthentication, function (req, res) {
     var todoID = parseInt(req.params.id);
     db.todo.destroy({
         where: {
@@ -99,7 +101,7 @@ app.delete('/todos/:id', function (req, res) {
 });
 
 //PUT /todos/:id
-app.put('/todos/:id', function (req, res) {
+app.put('/todos/:id', middleware.requireAuthentication, function (req, res) {
     var todoID = parseInt(req.params.id);
     var body = _.pick(req.body, 'description', 'completed');
     var attributes = {};
@@ -167,7 +169,7 @@ app.post('/users/login', function (req, res) {
         });
 });
 
-db.sequelize.sync({force: true}).then(function () {
+db.sequelize.sync().then(function () {
     app.listen(PORT, function () {
         console.log("Express listing on port: " + PORT) + "!";
     });
