@@ -22,7 +22,7 @@ app.get('/', function (req, res) {
 app.get('/todos', middleware.requireAuthentication, function (req, res) {
     var queryParams = req.query;
     var where = {
-        uesrId: req.user.id
+        userId: req.user.id
     };
 
     if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'true') {
@@ -49,7 +49,7 @@ app.get('/todos/:id', middleware.requireAuthentication, function (req, res) {
     db.todo.findOne({
         where: {
             id: todoId,
-            uesrId: req.user.id
+            userId: req.user.id
         }
     }).then(function (todo) {
         if (!todo) {
@@ -93,7 +93,7 @@ app.delete('/todos/:id', middleware.requireAuthentication, function (req, res) {
     db.todo.destroy({
         where: {
             id: todoID,
-            uesrId: req.user.id
+            user: req.user.id
         }
     }).then(function (rows) {
         if (rows == 0) {
@@ -126,14 +126,14 @@ app.put('/todos/:id', middleware.requireAuthentication, function (req, res) {
         if (!todo) {
             res.status(404).send();
         } else {
-            if (todo.uesrId === req.user.id) {
+            if (todo.userId === req.user.id) {
                 todo.update(attributes)
                     .then(function (todo) {
                         res.json(todo.toJSON());
                     }, function (e) {
                         res.status(400).json(e);
                     });
-            }else{
+            } else {
                 res.status(404).send();
             }
         }
@@ -165,20 +165,35 @@ app.post('/users', function (req, res) {
 
 //POST /users/login
 app.post('/users/login', function (req, res) {
-    var body = _.pick(req.body, 'email', 'password');
+        var body = _.pick(req.body, 'email', 'password');
+        var userInstance;
 
-    db.user.authenticate(body)
-        .then(function (user) {
-            var token = user.generateToken('authentication');
-            if (token) {
-                res.header('Auth', token).json(user.toPublicJSON());
-            } else {
-                res.status(401).send();
+        db.user.authenticate(body)
+            .then(function (user) {
+                var token = user.generateToken('authentication');
+                userInstance = user;
+
+                return db.token.create({
+                    token: token
+                });
+            })
+            .then(function (tokenInstance) {
+                res.header('Auth', tokenInstance.token).json(userInstance.toPublicJSON());
+            }).catch(function (e) {
+                res.status(401).json(e);
             }
+        );
+    }
+);
 
-        }, function (e) {
-            res.status(401).json(e);
-        });
+
+//DELETE /users/login
+app.delete('/users/login', middleware.requireAuthentication, function (req, res) {
+    req.token.destroy().then(function () {
+        res.status(204).send();
+    }).catch(function () {
+        res.status(500).send();
+    });
 });
 
 db.sequelize.sync({

@@ -7,7 +7,7 @@ var cryptojs = require('crypto-js');
 var jwt = require('jsonwebtoken');
 
 module.exports = function (sequelize, DataTypes) {
-    var user = sequelize.define('uesr', {
+    var user = sequelize.define('user', {
             email: {
                 type: DataTypes.STRING,
                 allowNull: false,
