@@ -5,10 +5,10 @@ var sequelize = new Sequelize(undefined, undefined, undefined, {
 });
 
 var Todo = sequelize.define('todo', {
-    description : {
+    description: {
         type: Sequelize.STRING,
         allowNull: false,
-        validate:{
+        validate: {
             len: [1, 255]
         }
     },
@@ -19,47 +19,46 @@ var Todo = sequelize.define('todo', {
     }
 });
 
-sequelize.sync().then(function () {
+var User = sequelize.define('user', {
+    email: {
+        type: Sequelize.STRING
+    }
+});
+
+Todo.belongsTo(User);
+User.hasMany(Todo);
+
+sequelize.sync({
+    // force: true
+}).then(function () {
     console.log('Everything is synced');
 
-    Todo.findOne({
-        where: {
-            id: 1
-        }
-    }).then(function (todo) {
-       if (todo){
-           console.log(todo.toJSON());
-       }else{
-           console.log("Cannot find item");
-       }
+    // var where = [];
+    User.findById(1).then(function (user) {
+        user.getTodos({
+            where:{
+                completed:false
+            }
+        }).then(function (todos) {
+            todos.forEach(function (todo) {
+                console.log(todo.toJSON());
+                // if (todo.completed === false) {
+                //     where.push(todo);
+                // };
+            });
+        });
     });
-
-    // Todo.create({
-    //     description: "Take out trash"
-    //
-    // }).then(function (todo) {
+    // User.create({
+    //     email: 'xuebaibai2@hotmail.com'
+    // }).then(function (user) {
     //     return Todo.create({
-    //         description: 'clearn office'
+    //         description: "Clean yard",
+    //         completed: true
     //     });
-    // }).then(function () {
-    //   // return Todo.findById(1);
-    //     return Todo.findAll({
-    //         where:{
-    //             description: {
-    //                 $like: '%trash%'
-    //             }
-    //         }
-    //     });
-    // }).then(function (todos) {
-    //     if (todos){
-    //         todos.forEach(function (todo) {
-    //             console.log(todo.toJSON());
-    //         });
-    //
-    //     }else{
-    //         console.log('No todo found!');
-    //     }
-    // }).catch(function (e) {
-    //     console.log(e);
+    // }).then(function (todo) {
+    //     User.findById(1).then(function (user) {
+    //         user.addTodo(todo);
+    //     })
     // })
+
 });

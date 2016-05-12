@@ -71,7 +71,11 @@ app.post('/todos', middleware.requireAuthentication, function (req, res) {
         completed: body.completed
     }).then(function (todo) {
         if (todo) {
-            res.json(todo.toJSON());
+            req.user.addTodo(todo).then(function () {
+                return todo.reload();
+            }).then(function (todo) {
+                res.json(todo.toJSON());
+            });
         } else {
             res.status(400).send("Failed to post");
         }
@@ -158,9 +162,9 @@ app.post('/users/login', function (req, res) {
     db.user.authenticate(body)
         .then(function (user) {
             var token = user.generateToken('authentication');
-            if (token){
+            if (token) {
                 res.header('Auth', token).json(user.toPublicJSON());
-            }else{
+            } else {
                 res.status(401).send();
             }
 
